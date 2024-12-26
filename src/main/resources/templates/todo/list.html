@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>투두 리스트</title>
+<style>
+body {
+	font-family: Arial, sans-serif;
+	background-color: #f8f9fa;
+	margin: 0;
+	display: flex;
+}
+
+/* 사이드바 스타일 */
+.sidebar {
+	width: 250px;
+	background: #343a40;
+	color: #ffffff;
+	padding: 20px;
+	box-sizing: border-box;
+	height: 100vh;
+}
+
+.sidebar h3 {
+	text-align: center;
+	margin-bottom: 20px;
+	font-size: 1.5em;
+}
+
+/* 메인 컨텐츠 스타일 */
+.main-container {
+	flex: 1;
+	padding: 20px;
+	box-sizing: border-box;
+}
+
+.date-title {
+	text-align: center;
+	font-size: 2em;
+	margin-bottom: 20px;
+}
+
+.todo-input {
+	display: flex;
+	justify-content: center;
+	margin-bottom: 20px;
+}
+
+.todo-input input[type="text"] {
+	flex: 1;
+	padding: 10px;
+	border: 1px solid #ddd;
+	border-radius: 5px;
+	margin-right: 10px;
+}
+
+.todo-input button {
+	padding: 10px;
+	background-color: #28a745;
+	color: white;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
+}
+
+.todo-input button:hover {
+	background-color: #218838;
+}
+
+.todo-list {
+	width: 100%;
+	max-width: 600px;
+	margin: 0 auto;
+}
+
+.todo-item {
+	background: #ffffff;
+	border: 1px solid #ddd;
+	padding: 10px;
+	margin-bottom: 10px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-radius: 5px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.todo-item span {
+	flex: 1;
+}
+
+button {
+	padding: 5px 10px;
+	border: none;
+	border-radius: 5px;
+	background-color: #007bff;
+	color: white;
+	cursor: pointer;
+}
+
+button:hover {
+	background-color: #0056b3;
+}
+
+.back-button {
+	display: inline-block;
+	margin-top: 20px;
+	padding: 10px 20px;
+	background-color: #6c757d;
+	color: white;
+	text-decoration: none;
+	border-radius: 5px;
+}
+
+.back-button:hover {
+	background-color: #5a6268;
+}
+
+.checkbox {
+	margin-right: 10px;
+}
+
+.hidden {
+	display: none;
+}
+.todo-item.completed span {
+    text-decoration: line-through;
+    color: gray;
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const todoItems = document.querySelectorAll('.todo-item');
+
+    todoItems.forEach(item => {
+        const checkbox = item.querySelector('.checkbox');
+        const todoId = item.getAttribute('data-id');
+        const editButton = item.querySelector('.edit-button');
+        const saveButton = item.querySelector('.save-button');
+        const cancelButton = item.querySelector('.cancel-button');
+        const contentSpan = item.querySelector('.todo-content');
+        const editInput = item.querySelector('.edit-input');
+
+        // 초기화: completed 상태에 따라 스타일 적용
+        if (checkbox && checkbox.checked) {
+            item.classList.add('completed');
+        }
+
+        // 체크박스 상태 변경 이벤트
+        if (checkbox) {
+            checkbox.addEventListener('change', async () => {
+                const completed = checkbox.checked;
+                item.classList.toggle('completed', completed);
+
+                try {
+                    const response = await fetch(`/todo/toggle/${todoId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ completed })
+                    });
+
+                    if (!response.ok) {
+                        alert('상태 업데이트에 실패했습니다.');
+                        checkbox.checked = !completed; // 상태 롤백
+                        item.classList.toggle('completed', !completed);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('서버와의 통신 중 오류가 발생했습니다.');
+                    checkbox.checked = !completed; // 상태 롤백
+                    item.classList.toggle('completed', !completed);
+                }
+            });
+        }
+
+        // 수정 버튼 클릭 이벤트
+        if (editButton) {
+            editButton.addEventListener('click', () => {
+                contentSpan.classList.add('hidden');
+                editInput.classList.remove('hidden');
+                editButton.classList.add('hidden');
+                saveButton.classList.remove('hidden');
+                cancelButton.classList.remove('hidden');
+            });
+        }
+
+        // 저장 버튼 클릭 이벤트
+        if (saveButton) {
+            saveButton.addEventListener('click', async () => {
+                const updatedContent = editInput.value;
+
+                try {
+                    const response = await fetch(`/todo/edit/${todoId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content: updatedContent })
+                    });
+
+                    if (response.ok) {
+                        contentSpan.textContent = updatedContent;
+                    } else {
+                        alert('수정에 실패했습니다.');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+
+                resetView();
+            });
+        }
+
+        // 취소 버튼 클릭 이벤트
+        if (cancelButton) {
+            cancelButton.addEventListener('click', () => {
+                resetView();
+            });
+        }
+
+        // 뷰 초기화 함수
+        function resetView() {
+            contentSpan.classList.remove('hidden');
+            editInput.classList.add('hidden');
+            editButton.classList.remove('hidden');
+            saveButton.classList.add('hidden');
+            cancelButton.classList.add('hidden');
+        }
+    });
+});
+</script>
+
+</head>
+<body>
+	<!-- 사이드바 -->
+	<div class="sidebar">
+		<h3>
+			<span th:text="${username}"></span>'s To-Do List 👻🧩🌼🍋🍧
+		</h3>
+		<!-- 달력 페이지로 돌아가는 버튼 -->
+		<a href="/calendar" class="back-button">달력 페이지로 돌아가기</a>
+	</div>
+
+	<!-- 메인 컨텐츠 -->
+	<div class="main-container">
+		<!-- 선택된 날짜 표시 -->
+		<div class="date-title" th:text="${selectedDate}">2024-12-18</div>
+
+		<!-- 할 일 추가 폼 -->
+		<div class="todo-input">
+			<form th:action="@{/todo/add}" method="post">
+				<input type="text" name="content" placeholder="할 일을 입력하세요" required>
+				<input type="hidden" name="date" th:value="${selectedDate}">
+				<button type="submit">+</button>
+			</form>
+		</div>
+
+		<!-- 투두 리스트 -->
+		<div class="todo-list">
+			<div class="todo-item" th:each="todo : ${todoList}" th:attr="data-id=${todo.todoId}">
+				<div>
+					<input type="checkbox" class="checkbox" th:checked="${todo.completed}">
+					<span class="todo-content" th:text="${todo.content}"></span>
+					<input type="text" class="edit-input hidden" th:value="${todo.content}">
+				</div>
+				<div>
+					<button type="button" class="edit-button">수정</button>
+					<button type="button" class="save-button hidden">저장</button>
+					<button type="button" class="cancel-button hidden">취소</button>
+					<form th:action="@{/todo/delete/{id}(id=${todo.todoId})}" method="post" style="display:inline;" onsubmit="return confirm('정말로 삭제하시겠습니까?')">
+						<input type="hidden" name="date" th:value="${selectedDate}">
+						<button type="submit">삭제</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

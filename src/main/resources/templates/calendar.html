@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>달력 페이지</title>
+
+<!-- FullCalendar CSS -->
+<link
+	href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.min.css"
+	rel="stylesheet" />
+
+<!-- 스타일 추가 -->
+<style>
+body {
+	font-family: Arial, sans-serif;
+	background-color: #f8f9fa;
+	margin: 0;
+	padding: 0;
+	display: flex; /* 좌측 회원 정보와 달력을 나란히 표시 */
+	height: 100vh;
+}
+
+/* 좌측 패널 스타일 */
+.sidebar {
+	width: 250px;
+	background: #343a40;
+	color: #ffffff;
+	padding: 20px;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between; /* 상단과 하단 사이 여백을 자동 배치 */
+	height: 100%;
+}
+
+.sidebar h3 {
+	text-align: center;
+	margin-bottom: 20px;
+	font-size: 1.5em;
+}
+
+.logout-container {
+	margin-top: auto; /* 로그아웃 버튼을 아래로 밀어내기 */
+}
+
+.logout-btn {
+	display: block;
+	width: 100%;
+	padding: 10px;
+	text-align: center;
+	background-color: #dc3545;
+	color: white;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
+	text-decoration: none;
+	box-sizing: border-box;
+}
+
+.logout-btn:hover {
+	background-color: #bd2130;
+}
+
+/* 달력 스타일 */
+#calendar-container {
+	flex: 1; /* 남은 공간을 차지 */
+	padding: 20px;
+	box-sizing: border-box;
+}
+
+#calendar {
+	max-width: 1000px;
+	margin: 0 auto;
+}
+</style>
+</head>
+<body>
+	<!-- 좌측 패널 -->
+	<div class="sidebar">
+		<h3>
+			<span th:text="${username}"></span>'s To-Do List👻🧩🌼🍋🍧
+		</h3>
+
+		<!-- 로그아웃 버튼 -->
+		<div class="logout-container">
+			<form method="get" action="/logout">
+				<button type="submit" class="logout-btn">로그아웃</button>
+			</form>
+
+		</div>
+	</div>
+
+	<!-- 달력 영역 -->
+	<div id="calendar-container">
+		<div id="calendar"></div>
+	</div>
+
+	<!-- FullCalendar JS -->
+	<script
+		src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+	<!-- 달력 초기화 스크립트 -->
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			var calendarEl = document.getElementById('calendar');
+
+			var calendar = new FullCalendar.Calendar(calendarEl, {
+				initialView : 'dayGridMonth', // 월간 달력
+				locale : 'ko', // 한국어 설정
+				dateClick : function(info) {
+					alert('선택된 날짜: ' + info.dateStr); // 날짜 클릭 이벤트
+					window.location.href = '/todo?date=' + info.dateStr; // 투두 리스트 페이지로 이동
+				},
+				headerToolbar : {
+					left : 'prev,next today',
+					center : 'title',
+					right : 'dayGridMonth' // "month" 버튼만 표시
+				}
+			});
+
+			calendar.render(); // 달력 렌더링
+		});
+	</script>
+</body>
+</html>
